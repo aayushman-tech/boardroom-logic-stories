@@ -1,0 +1,15 @@
+{
+  "name": "boardroom-logic-stories",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Story content repository for Boardroom Logic. Every story is a JSON file validated against a strict schema before publication.",
+  "type": "module",
+  "scripts": {
+    "validate": "node tools/validate.js",
+    "validate:demo": "node tools/validate.js --allow-short",
+    "add-story": "node tools/add-story.js"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
