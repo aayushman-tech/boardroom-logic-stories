@@ -1,6 +1,22 @@
 {
-  "schemaVersion": 1,
-  "minAppVersion": "1.0.0",
-  "updated": "2026-10-30T09:00:00.000Z",
-  "stories": []
+ "schemaVersion": 1,
+ "minAppVersion": "1.0.0",
+ "updated": "2026-10-31T05:07:21.316Z",
+ "stories": [
+  {
+   "id": "2026-10-31-the-turnaround-protocol",
+   "title": "The Turnaround Protocol",
+   "subtitle": "A high-stakes case study in corporate distress and capital discipline",
+   "publishDate": "2026-10-31",
+   "estimatedMinutes": 63,
+   "difficulty": "hard",
+   "tags": [
+    "turnaround",
+    "capital allocation",
+    "distress"
+   ],
+   "file": "stories/2026-10-31-the-turnaround-protocol.json",
+   "sha256": "f70a1d4040b608861c8b41a16d9f87ef0e2f05b931b00e8d744dbb6f4855ce5a"
+  }
+ ]
 }
