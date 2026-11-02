@@ -1,6 +1,23 @@
 {
-  "schemaVersion": 1,
-  "minAppVersion": "1.0.0",
-  "updated": "2026-10-31T05:00:00Z",
-  "stories": []
+ "schemaVersion": 2,
+ "minAppVersion": "1.1.0",
+ "updated": "2026-11-02T17:15:13.073Z",
+ "stories": [
+  {
+   "id": "garage-to-glory",
+   "title": "Garage to Glory",
+   "subtitle": "Build it. Lose it. Win it back.",
+   "publishDate": "2026-11-02",
+   "estimatedMinutes": 42,
+   "tags": [
+    "technology",
+    "strategy",
+    "comeback",
+    "hardware",
+    "leadership"
+   ],
+   "file": "stories/garage-to-glory.json",
+   "sha256": "36807a99494cf944f591a5c239f87b630440fd84d3d6182a0d4f150890da27a3"
+  }
+ ]
 }

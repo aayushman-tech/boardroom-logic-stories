@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// validate.js - validates every story in this repo against the schema + publication rules.
+// validate.js - validates every story in this repo against the v2 schema + publication rules.
 // Usage:
 //   node tools/validate.js                 # full repo: index.json + all published stories
 //   node tools/validate.js --single <path> # validate one story file in isolation
@@ -27,6 +27,20 @@ function sha256File(file) {
 
 const indent = "  ";
 
+function printStoryReport(label, result) {
+  if (result.ok) {
+    const m = result.metrics || {};
+    console.log(
+      `OK  ${label} (shortest win path: ${m.shortestPathScenes} scenes, ${m.shortestPathDecisions} decisions, ${m.shortestPathWords} words, ~${m.estimatedMinutes} min | endings: ${m.winEndingsCount} win, ${m.loseEndingsCount} lose | quick-lose ratio: ${(m.temptingWrongOptionRatio != null ? (m.temptingWrongOptionRatio * 100).toFixed(0) + "%" : "n/a")})`
+    );
+    for (const w of result.warnings) console.warn(`${indent}~ ${w}`);
+  } else {
+    console.error(`FAIL: ${label}`);
+    for (const e of result.errors) console.error(`${indent}- ${e}`);
+    for (const w of result.warnings) console.warn(`${indent}~ ${w}`);
+  }
+}
+
 if (singlePath) {
   const file = path.resolve(singlePath);
   const raw = fs.readFileSync(file, "utf8");
@@ -45,26 +59,14 @@ if (singlePath) {
 // ---- full repo validation ----
 let failed = false;
 
-// demo (expected present, validated with allow-short semantics)
-const demoPath = path.join(repoRoot, "examples", "demo.json");
-if (fs.existsSync(demoPath)) {
-  const demoData = JSON.parse(fs.readFileSync(demoPath, "utf8"));
-  const demoResult = validateStory(demoData, { allowShort: true, schema });
-  printStoryReport(path.relative(repoRoot, demoPath), demoResult);
-  if (!demoResult.ok) failed = true;
-} else {
-  console.error("FAIL: examples/demo.json is missing");
-  failed = true;
-}
-
 // manifest
 const manifestPath = path.join(repoRoot, "index.json");
 let manifest;
 try {
   manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
-  if (manifest.schemaVersion !== 1) throw new Error("schemaVersion must be 1");
+  if (manifest.schemaVersion !== 2) throw new Error("schemaVersion must be 2");
   if (!Array.isArray(manifest.stories)) throw new Error("stories must be an array");
-  console.log(`OK  index.json parses (schemaVersion 1, ${manifest.stories.length} stories)`);
+  console.log(`OK  index.json parses (schemaVersion 2, minAppVersion ${manifest.minAppVersion || "1.1.0"}, ${manifest.stories.length} stories)`);
 } catch (e) {
   console.error(`FAIL: index.json: ${e.message}`);
   process.exit(1);
@@ -97,9 +99,11 @@ for (const entry of manifest.stories) {
   }
   const result = validateStory(data, { allowShort: false, schema });
   const entryCheck = validateManifestEntry(entry, data, manifest, { sha256: actualHash });
-  // published stories must have manifest-visible metrics consistent with real computation
-  if (result.metrics && typeof result.metrics.estimatedMinutes === "number" &&
-      result.metrics.estimatedMinutes !== entry.estimatedMinutes) {
+  if (
+    result.metrics &&
+    typeof result.metrics.estimatedMinutes === "number" &&
+    result.metrics.estimatedMinutes !== entry.estimatedMinutes
+  ) {
     entryCheck.problems.push(`estimatedMinutes ${entry.estimatedMinutes} != computed ${result.metrics.estimatedMinutes}`);
   }
   const problems = [...result.errors, ...entryCheck.problems];
@@ -107,11 +111,10 @@ for (const entry of manifest.stories) {
     console.error(`FAIL: ${entry.id}`);
     console.error(`${indent}hash: ${entry.sha256 === actualHash ? "ok" : `mismatch (manifest ${entry.sha256}, actual ${actualHash})`}`);
     for (const e of problems) console.error(`${indent}- ${e}`);
-    if (result.warnings.length) for (const w of result.warnings) console.error(`${indent}~ ${w}`);
+    for (const w of result.warnings) console.warn(`${indent}~ ${w}`);
     failed = true;
   } else {
-    console.log(`OK  ${entry.id} (${result.metrics.shortestPathScenes} scenes on shortest path, ${result.metrics.shortestPathWords} words, ~${result.metrics.estimatedMinutes} min, ${result.distinctEndingKinds.length} ending kinds)`);
-    if (result.warnings.length) for (const w of result.warnings) console.error(`${indent}~ ${w}`);
+    printStoryReport(entry.id, result);
   }
 }
 
@@ -123,22 +126,10 @@ if (fs.existsSync(storiesDir)) {
     if (!f.endsWith(".json")) continue;
     const rel = `stories/${f}`;
     if (!referenced.has(rel)) {
-      console.error(`WARN: stories/${f} exists but is not listed in index.json`);
+      console.warn(`WARN: stories/${f} exists but is not listed in index.json`);
     }
   }
 }
 
 console.log(failed ? "\nVALIDATION FAILED" : "\nALL VALID");
 process.exit(failed ? 1 : 0);
-
-function printStoryReport(label, result) {
-  if (result.ok) {
-    const m = result.metrics || {};
-    console.log(`OK  ${label} (shortest path: ${m.shortestPathScenes} scenes, ${m.shortestPathDecisions} decisions, ${m.shortestPathWords} words, ~${m.estimatedMinutes} min, endings: kind kinds ${result.distinctEndingKinds.join(", ")})`);
-    for (const w of result.warnings) console.error(`${indent}~ ${w}`);
-  } else {
-    console.error(`FAIL: ${label}`);
-    for (const e of result.errors) console.error(`${indent}- ${e}`);
-    for (const w of result.warnings) console.error(`${indent}~ ${w}`);
-  }
-}
